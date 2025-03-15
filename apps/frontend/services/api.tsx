@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:5000/api"; // Update if needed
+const API_BASE_URL = process.env.API_URL
+  ? process.env.API_URL
+  : "http://localhost:5000/api"; // Update if needed
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -45,15 +47,15 @@ export const fetchTrades = async () => {
 };
 
 // ✅ Create Trade (Buy/Sell)
-export const createTrade = async (
-  tradeData: any,
-  queryParam: string = ""
-) => {
+export const createTrade = async (tradeData: any, queryParam: string = "") => {
   try {
     const res = await api.post(`/trades${queryParam}`, tradeData);
     return res.data;
   } catch (error: any) {
-    console.error("Error creating trade:", error.response?.data?.message || error.message);
+    console.error(
+      "Error creating trade:",
+      error.response?.data?.message || error.message
+    );
     throw new Error(error.response?.data?.message || "Trade creation failed");
   }
 };
@@ -75,18 +77,28 @@ export const loginUser = async (email: string, password: string) => {
     const res = await api.post("/auth/login", { email, password });
     return res.data; // Returns { token, user }
   } catch (error: any) {
-    console.error("Login failed:", error.response?.data?.message || error.message);
+    console.error(
+      "Login failed:",
+      error.response?.data?.message || error.message
+    );
     throw new Error(error.response?.data?.message || "Login failed");
   }
 };
 
 // ✅ User Register
-export const registerUser = async (name: string, email: string, password: string) => {
+export const registerUser = async (
+  name: string,
+  email: string,
+  password: string
+) => {
   try {
     const res = await api.post("/auth/signup", { name, email, password });
     return res.data; // Returns { token, user }
   } catch (error: any) {
-    console.error("Registration failed:", error.response?.data?.message || error.message);
+    console.error(
+      "Registration failed:",
+      error.response?.data?.message || error.message
+    );
     throw new Error(error.response?.data?.message || "Registration failed");
   }
 };
@@ -105,10 +117,12 @@ export const uploadBulkTrades = async (file: File) => {
 
     return res.data; // { message: "Trades uploaded successfully", count: 5 }
   } catch (error: any) {
-    console.error("Bulk upload failed:", error.response?.data?.message || error.message);
+    console.error(
+      "Bulk upload failed:",
+      error.response?.data?.message || error.message
+    );
     throw new Error(error.response?.data?.message || "Bulk upload failed");
   }
 };
-
 
 export default api;

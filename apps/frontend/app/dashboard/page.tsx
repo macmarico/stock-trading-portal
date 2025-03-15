@@ -11,7 +11,7 @@ const Dashboard = () => {
   const auth = useContext(AuthContext);
   const router = useRouter();
   const [trades, setTrades] = useState([]);
-  const [lots, setLots] = useState({}); // ✅ State for lots
+  const [lots, setLots] = useState<{ [key: string]: any[] }>({}); // ✅ State for lots with type definition
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false); // ✅ Modal state

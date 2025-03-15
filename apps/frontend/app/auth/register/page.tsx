@@ -19,7 +19,7 @@ const RegisterPage = () => {
 
     try {
       const { token, user } = await registerUser(name, email, password);
-      login(token, user); // Store user info in context
+      login!(token, user); // Store user info in context
       router.push("/dashboard"); // Redirect to dashboard
     } catch (err: any) {
       setError(err.message);

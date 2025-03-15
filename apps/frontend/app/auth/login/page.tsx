@@ -18,7 +18,7 @@ const LoginPage = () => {
 
     try {
       const { token, user } = await loginUser(email, password);
-      login(token, user); // Store user info in context
+      login!(token, user); // Store user info in context
       router.push("/dashboard"); // Redirect to dashboard
     } catch (err: any) {
       setError(err.message);

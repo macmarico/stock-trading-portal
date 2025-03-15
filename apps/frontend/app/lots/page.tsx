@@ -23,7 +23,7 @@ const LotsPage = () => {
       try {
         setLoading(true);
         setError("");
-        const data = await fetchLots(auth.token);
+        const data = await fetchLots();
         setLots(data);
       } catch (err: any) {
         setError("Failed to load lots.");
