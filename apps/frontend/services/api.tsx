@@ -91,5 +91,24 @@ export const registerUser = async (name: string, email: string, password: string
   }
 };
 
+// ✅ Bulk Trade Upload (New Function)
+export const uploadBulkTrades = async (file: File) => {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await api.post("/trades/upload-trades", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+
+    return res.data; // { message: "Trades uploaded successfully", count: 5 }
+  } catch (error: any) {
+    console.error("Bulk upload failed:", error.response?.data?.message || error.message);
+    throw new Error(error.response?.data?.message || "Bulk upload failed");
+  }
+};
+
 
 export default api;

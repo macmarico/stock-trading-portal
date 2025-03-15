@@ -3,9 +3,9 @@ const { sequelize } = require("../config/db");
 
 const Lot = sequelize.define("Lot", {
   lot_id: {
-    type: DataTypes.UUID,
-    defaultValue: DataTypes.UUIDV4,
-    primaryKey: true,
+    type: DataTypes.INTEGER,  // Changed from UUID to INTEGER
+    autoIncrement: true,      // Enable auto-increment
+    primaryKey: true,         // Set as the primary key
   },
   trade_id: { type: DataTypes.UUID, allowNull: false },
   stock_name: { type: DataTypes.STRING, allowNull: false },

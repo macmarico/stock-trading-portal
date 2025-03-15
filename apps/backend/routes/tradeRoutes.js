@@ -1,8 +1,10 @@
 const express = require("express");
-const { createTrade, getTrades, getTradeById, deleteTrade } = require("../controllers/tradeController");
+const multer = require("multer");
+const { createTrade, getTrades, getTradeById, deleteTrade, uploadTrades } = require("../controllers/tradeController");
 const authMiddleware = require("../middleware/authMiddleware");
 
 const router = express.Router();
+const upload = multer({ dest: "uploads/" });
 
 /**
  * @swagger
@@ -153,5 +155,49 @@ router.get("/:id", authMiddleware, getTradeById);
  *         description: Unauthorized - JWT token required
  */
 router.delete("/:id", authMiddleware, deleteTrade);
+
+/**
+ * @swagger
+ * /api/trades/upload-trades:
+ *   post:
+ *     summary: Bulk upload trades via CSV file
+ *     description: Upload a CSV file containing multiple trades (BUY/SELL) for batch processing.
+ *     tags:
+ *       - Trades
+ *     security:
+ *       - BearerAuth: []  # ✅ Explicitly add security
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *                 description: The CSV file containing trade data.
+ *     responses:
+ *       201:
+ *         description: Trades uploaded successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: "Trades uploaded successfully"
+ *                 count:
+ *                   type: integer
+ *                   example: 5
+ *       400:
+ *         description: Invalid CSV file or missing fields.
+ *       401:
+ *         description: Unauthorized (Invalid or missing Bearer token)
+ *       500:
+ *         description: Internal server error.
+ */
+router.post("/upload-trades", authMiddleware, upload.single("file"), uploadTrades);
 
 module.exports = router;

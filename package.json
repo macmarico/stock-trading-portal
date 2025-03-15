@@ -4,7 +4,21 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "concurrently \"npm run dev --workspace=apps/backend\" \"npm run dev --workspace=apps/frontend\"",
+    "backend": "npm run dev --workspace=apps/backend",
+    "frontend": "npm start --workspace=apps/frontend",
+    "install:all": "npm install --workspaces",
+    "build": "npm run build --workspace=apps/frontend",
+    "start": "npm run backend & npm run frontend",
+    "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
+    "test": "echo \"No test specified\" && exit 1",
+    "format": "prettier --write .",
+    "clean": "rm -rf node_modules && npm cache clean --force && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^7.0.0",
+    "prettier": "^3.0.0",
+    "eslint": "^8.0.0"
   },
   "workspaces": [
     "apps/backend",

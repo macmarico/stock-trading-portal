@@ -2,6 +2,8 @@ const Trade = require("../models/Trade");
 const Lot = require("../models/Lot");
 const { Op } = require("sequelize");
 const { sequelize } = require("../config/db");
+const fs = require("fs");
+const csv = require("csv-parser");
 
 /**
  * Create a new trade (BUY or SELL) for the logged-in user
@@ -20,15 +22,12 @@ exports.createTrade = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    
-
     if (!["BUY", "SELL"].includes(trade_type.toUpperCase())) {
       await transaction.rollback();
       return res.status(400).json({
         message: "Invalid trade type. Must be 'BUY' or 'SELL'",
       });
     }
-    
 
     // Create trade entry inside transaction
     const trade = await Trade.create(
@@ -61,7 +60,6 @@ exports.createTrade = async (req, res) => {
       return res
         .status(201)
         .json({ message: "Buy trade processed successfully", trade });
-
     } else if (trade_type.toUpperCase() === "SELL") {
       const { method } = req.query;
       if (!method || (method !== "FIFO" && method !== "LIFO")) {
@@ -101,6 +99,168 @@ exports.createTrade = async (req, res) => {
 };
 
 /**
+ * Create a bulk new trade (BUY or SELL) for the logged-in user
+ */
+exports.uploadTrades = async (req, res) => {
+  const transaction = await sequelize.transaction(); // Start transaction
+
+  try {
+    if (!req.file) {
+      await transaction.rollback();
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const filePath = req.file.path;
+    const trades = [];
+    const user_id = req.user.userId; // Extract user ID from token
+
+    // ✅ Read & Parse CSV File
+    const stream = fs.createReadStream(filePath).pipe(csv());
+
+    for await (const row of stream) {
+      const { stock_name, quantity, price, broker_name, trade_type } = row;
+
+      // ✅ Convert & Validate Data
+      const parsedQuantity = Number(quantity);
+      const parsedPrice = Number(price);
+
+      if (
+        !stock_name ||
+        !broker_name ||
+        isNaN(parsedQuantity) ||
+        isNaN(parsedPrice) ||
+        parsedQuantity <= 0 ||
+        parsedPrice <= 0 ||
+        !["BUY", "SELL"].includes(trade_type.toUpperCase())
+      ) {
+        await transaction.rollback();
+        return res
+          .status(400)
+          .json({ message: `Invalid data: ${JSON.stringify(row)}` });
+      }
+
+      trades.push({
+        stock_name,
+        quantity: parsedQuantity,
+        price: parsedPrice,
+        broker_name,
+        trade_type: trade_type.toUpperCase(),
+        user_id,
+      });
+    }
+
+    // -----------------------------------------------------------------------
+    // 1) CREATE TRADES IN SEQUENCE
+    // -----------------------------------------------------------------------
+    const createdTrades = [];
+    for (const tradeEntry of trades) {
+      // Insert each trade in sequence
+      const createdTrade = await Trade.create(tradeEntry, { transaction });
+      createdTrades.push(createdTrade);
+    }
+
+    // -----------------------------------------------------------------------
+    // 2) CREATE LOTS FOR BUY TRADES (ALSO IN SEQUENCE IF NEEDED)
+    // -----------------------------------------------------------------------
+    const buyTrades = createdTrades.filter((t) => t.trade_type === "BUY");
+
+    // Construct an array of Lot objects
+    const lotsData = buyTrades.map((trade) => ({
+      trade_id: trade.trade_id, // Link to Trade
+      stock_name: trade.stock_name,
+      lot_quantity: trade.quantity,
+      realized_quantity: 0,
+      lot_status: "OPEN",
+      user_id: trade.user_id,
+    }));
+
+    // Insert each Lot in sequence
+    for (const lotEntry of lotsData) {
+      await Lot.create(lotEntry, { transaction });
+    }
+
+    // -----------------------------------------------------------------------
+    // 3) HANDLE SELL TRADES (FIFO LOGIC)
+    // -----------------------------------------------------------------------
+    const sellTrades = createdTrades.filter((t) => t.trade_type === "SELL");
+
+    for (const trade of sellTrades) {
+      const { stock_name, quantity, trade_id } = trade;
+      let remainingQuantity = quantity;
+
+      // ✅ Get existing open lots using FIFO
+      const lotsToUpdate = await Lot.findAll({
+        where: {
+          stock_name,
+          user_id,
+          lot_status: { [Op.ne]: "FULLY REALIZED" },
+        },
+        order: [
+          ["createdAt", "ASC"],
+          ["lot_id", "ASC"],
+        ], // FIFO Order
+        transaction,
+        lock: true, // Lock to prevent race conditions
+      });
+
+      for (const lot of lotsToUpdate) {
+        if (remainingQuantity === 0) break;
+
+        const availableQuantity = lot.lot_quantity - lot.realized_quantity;
+
+        if (availableQuantity >= remainingQuantity) {
+          // ✅ Fully utilize this lot
+          await lot.update(
+            {
+              realized_quantity: lot.realized_quantity + remainingQuantity,
+              realized_trade_id: trade_id,
+              lot_status:
+                lot.realized_quantity + remainingQuantity === lot.lot_quantity
+                  ? "FULLY REALIZED"
+                  : "PARTIALLY REALIZED",
+            },
+            { transaction }
+          );
+          remainingQuantity = 0;
+        } else {
+          // ✅ Use up the entire lot
+          await lot.update(
+            {
+              realized_quantity: lot.lot_quantity,
+              realized_trade_id: trade_id,
+              lot_status: "FULLY REALIZED",
+            },
+            { transaction }
+          );
+          remainingQuantity -= availableQuantity;
+        }
+      }
+
+      if (remainingQuantity > 0) {
+        await transaction.rollback();
+        return res.status(400).json({
+          message: `Not enough stocks available to sell for ${stock_name}`,
+        });
+      }
+    }
+
+    // ✅ Commit if everything is successful
+    await transaction.commit();
+
+    // ✅ Clean up uploaded file
+    fs.unlinkSync(filePath);
+
+    return res
+      .status(201)
+      .json({ message: "Trades uploaded successfully", count: trades.length });
+  } catch (error) {
+    await transaction.rollback();
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
+/**
  * Get all trades for the logged-in user (Admins see all trades)
  */
 exports.getTrades = async (req, res) => {
@@ -109,7 +269,7 @@ exports.getTrades = async (req, res) => {
 
     if (req.user.role === "admin") {
       trades = await Trade.findAll({
-        order: [["createdAt", "DESC"]], 
+        order: [["createdAt", "DESC"]],
       });
     } else {
       trades = await Trade.findAll({
@@ -173,7 +333,14 @@ exports.deleteTrade = async (req, res) => {
 /**
  * Process a SELL trade using FIFO or LIFO for the logged-in user
  */
-async function processSellTrade(stock_name, sell_quantity, trade_id, method, user_id, transaction) {
+async function processSellTrade(
+  stock_name,
+  sell_quantity,
+  trade_id,
+  method,
+  user_id,
+  transaction
+) {
   try {
     let remainingQuantity = sell_quantity;
 
@@ -184,7 +351,8 @@ async function processSellTrade(stock_name, sell_quantity, trade_id, method, use
         user_id,
         lot_status: { [Op.ne]: "FULLY REALIZED" },
       },
-      order: method === "FIFO" ? [["createdAt", "ASC"]] : [["createdAt", "DESC"]],
+      order:
+        method === "FIFO" ? [["createdAt", "ASC"]] : [["createdAt", "DESC"]],
       transaction, // Ensure read happens within the transaction
       lock: true, // Prevent race conditions by locking the rows
     });
