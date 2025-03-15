@@ -1,0 +1,63 @@
+# Node.js dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+server-debug.log*
+debug.log
+
+# Build output
+dist/
+build/
+.out/
+.next/
+
+# Editor settings
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.log
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.bak
+*.lock
+
+# Cache files
+.cache/
+.pnp/
+.pnp.js
+.pnpm-store/
+.npm/
+
+# Dependency directories for workspaces
+apps/**/node_modules/
+
+# Test coverage reports
+coverage/
+*.lcov
+
+# GitHub Actions
+.github/
