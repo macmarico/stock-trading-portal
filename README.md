@@ -53,12 +53,6 @@ DATABASE_URL=postgres://user:password@localhost:5432/stock_trading_db
 JWT_SECRET=your_secret_key
 ```
 
-### 4️⃣ Run Migrations & Seed Data
-
-```sh
-  npx sequelize-cli db:migrate
-  npx sequelize-cli db:seed:all
-```
 
 ### 5️⃣ Start the server
 
@@ -77,6 +71,13 @@ Navigate to the `apps/frontend` folder and run:
 ```
 
 Frontend will run on `http://localhost:3000`
+
+### 5️⃣ Run test case
+
+```sh
+  cd apps/backend
+  npx jest tests/trade.test.js
+```
 
 ---
 
