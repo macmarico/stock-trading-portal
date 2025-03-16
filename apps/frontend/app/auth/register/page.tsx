@@ -12,10 +12,12 @@ const RegisterPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     try {
       const { token, user } = await registerUser(name, email, password);
@@ -23,6 +25,8 @@ const RegisterPage = () => {
       router.push("/dashboard"); // Redirect to dashboard
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -63,9 +67,14 @@ const RegisterPage = () => {
 
           <button
             type="submit"
-            className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition flex justify-center items-center"
+            disabled={loading}
           >
-            Register
+            {loading ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></div>
+            ) : (
+              "Register"
+            )}
           </button>
         </form>
 

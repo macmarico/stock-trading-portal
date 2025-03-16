@@ -11,10 +11,12 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     try {
       const { token, user } = await loginUser(email, password);
@@ -22,6 +24,8 @@ const LoginPage = () => {
       router.push("/dashboard"); // Redirect to dashboard
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -53,9 +57,14 @@ const LoginPage = () => {
 
           <button
             type="submit"
-            className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white p-2 rounded hover:bg-blue-700 transition flex justify-center items-center"
+            disabled={loading}
           >
-            Login
+            {loading ? (
+              <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-white"></div>
+            ) : (
+              "Login"
+            )}
           </button>
         </form>
 
