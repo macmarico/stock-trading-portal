@@ -27,6 +27,11 @@ exports.createTrade = async (req, res) => {
       return res.status(400).json({ message: "Quantity must be a positive number" });
     }
 
+    if (price <= 0) {
+      await transaction.rollback();
+      return res.status(400).json({ message: "Price must be a positive number" });
+    }
+
     if (!["BUY", "SELL"].includes(trade_type.toUpperCase())) {
       await transaction.rollback();
       return res.status(400).json({
