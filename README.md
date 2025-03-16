@@ -72,13 +72,6 @@ Navigate to the `apps/frontend` folder and run:
 
 Frontend will run on `http://localhost:3000`
 
-### 5️⃣ Run test case
-
-```sh
-  cd apps/backend
-  npx jest tests/trade.test.js
-```
-
 ---
 
 ## 🔥 API Endpoints
@@ -127,7 +120,8 @@ Apple,50,155,Broker C,SELL
 To run unit tests:
 
 ```sh
-  npm test
+  cd apps/backend
+  npx jest tests/trade.test.js
 ```
 
 ---
