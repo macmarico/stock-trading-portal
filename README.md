@@ -53,12 +53,6 @@ DATABASE_URL=postgres://user:password@localhost:5432/stock_trading_db
 JWT_SECRET=your_secret_key
 ```
 
-### 4️⃣ Run Migrations & Seed Data
-
-```sh
-  npx sequelize-cli db:migrate
-  npx sequelize-cli db:seed:all
-```
 
 ### 5️⃣ Start the server
 
@@ -126,7 +120,8 @@ Apple,50,155,Broker C,SELL
 To run unit tests:
 
 ```sh
-  npm test
+  cd apps/backend
+  npx jest tests/trade.test.js
 ```
 
 ---
