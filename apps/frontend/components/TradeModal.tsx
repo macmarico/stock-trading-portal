@@ -2,7 +2,13 @@
 import { useState } from "react";
 import { createTrade } from "@/services/api";
 
-const TradeModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+const TradeModal = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
   const [formData, setFormData] = useState({
     stock_name: "",
     quantity: "",
@@ -16,7 +22,9 @@ const TradeModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
   const [loading, setLoading] = useState(false);
 
   // Handle input changes
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -26,7 +34,8 @@ const TradeModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
     setError("");
     setLoading(true);
 
-    const { stock_name, quantity, price, broker_name, trade_type, method } = formData;
+    const { stock_name, quantity, price, broker_name, trade_type, method } =
+      formData;
 
     if (!stock_name || !quantity || !price || !broker_name) {
       setError("All fields are required");
@@ -42,6 +51,14 @@ const TradeModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
     } catch (err: any) {
       setError(err.message || "Failed to create trade");
     } finally {
+      setFormData({
+        stock_name: "",
+        quantity: "",
+        price: "",
+        broker_name: "",
+        trade_type: "BUY",
+        method: "FIFO", // Default FIFO for SELL trades
+      });
       setLoading(false);
     }
   };
@@ -52,7 +69,7 @@ const TradeModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-lg shadow-lg w-96">
         <h2 className="text-xl font-semibold text-center mb-4">Create Trade</h2>
-        
+
         {error && <p className="text-red-500 text-center mb-2">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -138,7 +155,17 @@ const TradeModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
           <div className="flex justify-between mt-4">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                setFormData({
+                  stock_name: "",
+                  quantity: "",
+                  price: "",
+                  broker_name: "",
+                  trade_type: "BUY",
+                  method: "FIFO", // Default FIFO for SELL trades
+                });
+                onClose();
+              }}
               className="px-4 py-2 border rounded text-gray-600 hover:bg-gray-200"
             >
               Cancel

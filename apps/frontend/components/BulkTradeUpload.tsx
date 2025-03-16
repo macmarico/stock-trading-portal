@@ -42,7 +42,7 @@ const BulkTradeUpload = ({ onUploadSuccess }: { onUploadSuccess: () => void }) =
 
   return (
     <div className="p-4 border rounded bg-white shadow">
-      <h2 className="text-lg font-semibold mb-2">Bulk Trade Upload</h2>
+      <h2 className="text-lg font-semibold mb-2">Bulk Trade Upload (supports FIFO only)</h2>
 
       {message && <p className="text-sm text-green-600">{message}</p>}
       {error && <p className="text-sm text-red-500">{error}</p>}

@@ -9,17 +9,22 @@ const csv = require("csv-parser");
  * Create a new trade (BUY or SELL) for the logged-in user
  */
 exports.createTrade = async (req, res) => {
-  const transaction = await sequelize.transaction(); // Start transaction
+  const transaction = await sequelize.transaction(); 
 
   try {
     let { stock_name, quantity, broker_name, price, trade_type } = req.body;
-    const user_id = req.user.userId; // Extract user ID from JWT token
+    const user_id = req.user.userId; 
     quantity = Number(quantity);
     price = Number(price);
 
     if (!stock_name || !quantity || !broker_name || !price || !trade_type) {
-      await transaction.rollback(); // Ensure rollback before response
+      await transaction.rollback();
       return res.status(400).json({ message: "All fields are required" });
+    }
+
+    if (quantity <= 0) {
+      await transaction.rollback();
+      return res.status(400).json({ message: "Quantity must be a positive number" });
     }
 
     if (!["BUY", "SELL"].includes(trade_type.toUpperCase())) {
@@ -39,7 +44,7 @@ exports.createTrade = async (req, res) => {
         trade_type: trade_type.toUpperCase(),
         user_id,
       },
-      { transaction } // Ensure trade creation is part of the transaction
+      { transaction } 
     );
 
     if (trade_type.toUpperCase() === "BUY") {
@@ -56,7 +61,7 @@ exports.createTrade = async (req, res) => {
         { transaction }
       );
 
-      await transaction.commit(); // ✅ Commit everything if successful
+      await transaction.commit();
       return res
         .status(201)
         .json({ message: "Buy trade processed successfully", trade });
@@ -69,7 +74,6 @@ exports.createTrade = async (req, res) => {
           .json({ message: "Specify method as FIFO or LIFO" });
       }
 
-      // Pass transaction to ensure atomicity
       const success = await processSellTrade(
         stock_name,
         quantity,
@@ -80,20 +84,20 @@ exports.createTrade = async (req, res) => {
       );
 
       if (success) {
-        await transaction.commit(); // ✅ Commit if sell was successful
+        await transaction.commit(); 
         return res.status(201).json({
           message: `Sell trade processed successfully using ${method}`,
           trade,
         });
       } else {
-        await transaction.rollback(); // ❌ Rollback if not enough stocks
+        await transaction.rollback(); 
         return res
           .status(400)
           .json({ message: "Not enough stocks available to sell" });
       }
     }
   } catch (error) {
-    await transaction.rollback(); // ❌ Rollback on any error
+    await transaction.rollback();
     return res.status(500).json({ error: error.message });
   }
 };
@@ -102,7 +106,7 @@ exports.createTrade = async (req, res) => {
  * Create a bulk new trade (BUY or SELL) for the logged-in user
  */
 exports.uploadTrades = async (req, res) => {
-  const transaction = await sequelize.transaction(); // Start transaction
+  const transaction = await sequelize.transaction();
 
   try {
     if (!req.file) {
@@ -112,15 +116,13 @@ exports.uploadTrades = async (req, res) => {
 
     const filePath = req.file.path;
     const trades = [];
-    const user_id = req.user.userId; // Extract user ID from token
+    const user_id = req.user.userId;
 
-    // ✅ Read & Parse CSV File
     const stream = fs.createReadStream(filePath).pipe(csv());
 
     for await (const row of stream) {
       const { stock_name, quantity, price, broker_name, trade_type } = row;
 
-      // ✅ Convert & Validate Data
       const parsedQuantity = Number(quantity);
       const parsedPrice = Number(price);
 
@@ -166,7 +168,7 @@ exports.uploadTrades = async (req, res) => {
 
     // Construct an array of Lot objects
     const lotsData = buyTrades.map((trade) => ({
-      trade_id: trade.trade_id, // Link to Trade
+      trade_id: trade.trade_id,
       stock_name: trade.stock_name,
       lot_quantity: trade.quantity,
       realized_quantity: 0,
@@ -188,7 +190,7 @@ exports.uploadTrades = async (req, res) => {
       const { stock_name, quantity, trade_id } = trade;
       let remainingQuantity = quantity;
 
-      // ✅ Get existing open lots using FIFO
+      // Get existing open lots using FIFO
       const lotsToUpdate = await Lot.findAll({
         where: {
           stock_name,
@@ -200,7 +202,7 @@ exports.uploadTrades = async (req, res) => {
           ["lot_id", "ASC"],
         ], // FIFO Order
         transaction,
-        lock: true, // Lock to prevent race conditions
+        lock: true,
       });
 
       for (const lot of lotsToUpdate) {
@@ -209,7 +211,7 @@ exports.uploadTrades = async (req, res) => {
         const availableQuantity = lot.lot_quantity - lot.realized_quantity;
 
         if (availableQuantity >= remainingQuantity) {
-          // ✅ Fully utilize this lot
+          // Fully utilize this lot
           await lot.update(
             {
               realized_quantity: lot.realized_quantity + remainingQuantity,
@@ -223,7 +225,7 @@ exports.uploadTrades = async (req, res) => {
           );
           remainingQuantity = 0;
         } else {
-          // ✅ Use up the entire lot
+          // Use up the entire lot
           await lot.update(
             {
               realized_quantity: lot.lot_quantity,
@@ -244,10 +246,10 @@ exports.uploadTrades = async (req, res) => {
       }
     }
 
-    // ✅ Commit if everything is successful
+    // Commit if everything is successful
     await transaction.commit();
 
-    // ✅ Clean up uploaded file
+    // Clean up uploaded file
     fs.unlinkSync(filePath);
 
     return res
@@ -353,8 +355,8 @@ async function processSellTrade(
       },
       order:
         method === "FIFO" ? [["createdAt", "ASC"]] : [["createdAt", "DESC"]],
-      transaction, // Ensure read happens within the transaction
-      lock: true, // Prevent race conditions by locking the rows
+      transaction,
+      lock: true,
     });
 
     for (let lot of lots) {
@@ -373,7 +375,7 @@ async function processSellTrade(
                 ? "FULLY REALIZED"
                 : "PARTIALLY REALIZED",
           },
-          { transaction } // Ensure update is within transaction
+          { transaction }
         );
         remainingQuantity = 0;
       } else {
