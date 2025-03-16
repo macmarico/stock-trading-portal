@@ -9,10 +9,6 @@ export default function Home() {
 
   return (
     <div className="flex flex-col min-h-screen justify-center items-center bg-gray-100 text-gray-800">
-      <header className="w-full py-5 bg-blue-600 text-white text-center text-lg font-semibold">
-        Stock Trading App
-      </header>
-
       <main className="flex flex-col items-center text-center p-6">
         <Image src="/next.svg" alt="Stock Trading Logo" width={180} height={38} />
         <h1 className="text-3xl font-bold mt-4">Welcome to Your Trading Platform</h1>
@@ -41,10 +37,6 @@ export default function Home() {
           )}
         </div>
       </main>
-
-      <footer className="w-full py-4 text-center bg-gray-200 mt-8">
-        <p>© {new Date().getFullYear()} Stock Trading App. All rights reserved.</p>
-      </footer>
     </div>
   );
 }
