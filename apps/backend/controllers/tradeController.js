@@ -24,7 +24,7 @@ exports.createTrade = async (req, res) => {
 
     if (quantity <= 0) {
       await transaction.rollback();
-      return res.status(400).json({ message: "Quantity must be a positive number" });
+      return res.status(400).json({ message: "Quantity must be a positive number. If you want to sell your stocks please choose trade type as sell." });
     }
 
     if (price <= 0) {
