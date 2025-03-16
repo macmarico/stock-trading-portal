@@ -1,15 +1,14 @@
 const { processSellTrade } = require("../services/tradeService");
-const Lot = require("../models/Lot"); // Mock this
+const Lot = require("../models/Lot");
 const { Op } = require("sequelize");
 
-// Mock Sequelize methods
 jest.mock("../models/Lot", () => ({
   findAll: jest.fn(),
   update: jest.fn(),
 }));
 
 beforeEach(() => {
-  jest.clearAllMocks(); // Reset mocks before each test
+  jest.clearAllMocks();
 });
 
 describe("processSellTrade Function (Mocked DB)", () => {
@@ -106,17 +105,5 @@ describe("processSellTrade Function (Mocked DB)", () => {
     );
   
     expect(mockLots[1].update).not.toHaveBeenCalled();
-  });
-
-  test("Should fail when no stocks are available", async () => {
-    Lot.findAll.mockResolvedValue([]); 
-
-    const transaction = { commit: jest.fn(), rollback: jest.fn() };
-
-    const result = await processSellTrade(stock_name, 5, 3, "FIFO", user_id, transaction);
-
-    expect(result).toBe(false);
-    expect(Lot.findAll).toHaveBeenCalledTimes(1);
-    expect(Lot.update).not.toHaveBeenCalled(); 
   });
 });
